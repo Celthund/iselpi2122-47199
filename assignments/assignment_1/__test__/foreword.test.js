@@ -1,7 +1,7 @@
 'use strict'
 
 const { expect } = require('@jest/globals')
-const { getGamesInfo, getGamesInfoPromise, Game } = require('../lib/foreword.js')
+const { getGamesInfo, getGamesInfoPromise, Game, responseToGameArray } = require('../lib/foreword.js')
 
 
 
@@ -35,18 +35,23 @@ test('Using Promises to get game info with 3 ids', () => {
     new Game("5H5JS0KLzK", "Wingspan", "https://www.boardgameatlas.com/game/5H5JS0KLzK/wingspan")
   ]
   const promise = getGamesInfoPromise([gameids])
-  expect(promise).resolves.toEqual(result)
+  return promise.then(value => expect(value).toEqual(result))
 }
 )
 
 test('Using Promises to get game info with 0 ids', () => {
   const gameids = []
   const result = []
-  const promise = getGamesInfoPromise([gameids])
-  expect(promise).resolves.toEqual(result)
+  const promise = getGamesInfoPromise(gameids)
+  return promise.catch(value => expect(value).toEqual(result))
 }
 )
 
+test('Testing responseToGameArray with empty object argument.', () => {
+  expect(responseToGameArray({})).toEqual([])
+})
 
 
-
+test('Testing responseToGameArray with object with empty games property.', () => {
+  expect(responseToGameArray({"games": []})).toEqual([])
+})

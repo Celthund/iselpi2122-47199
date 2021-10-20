@@ -3,13 +3,13 @@ const fetch = require('node-fetch');
 module.exports = {
     'getGamesInfo': getGamesInfo,
     'getGamesInfoPromise': getGamesInfoPromise,
-    'Game': Game
+    'Game': Game,
+    'responseToGameArray': responseToGameArray
 }
-
 
 function getUrl(gameids) {
     const ids = gameids.reduce((prev, curr) => prev + "," + curr)
-    const url = "https://api.boardgameatlas.com/api/search?order_by=rank&ascending=false&client_id=iLW2r2Ar8g&ids="
+    const url = "https://api.boardgameatlas.com/api/search?client_id=iLW2r2Ar8g&ids="
     return url + ids
 }
 
@@ -35,15 +35,15 @@ async function getGamesInfo(gameids) {
     return responseToGameArray(data)
 }
 
-
-
 function getGamesInfoPromise(gameids) {
-    return new Promise((resolved, reject) => {
+    return new Promise((resolved, rejected) => {
         if (gameids.length == 0)
-            reject([])
+            resolved([])
         else
-            return fetch(getUrl(gameids)).then(response => response.json())
+            return fetch(getUrl(gameids))
+                .then(response => response.json())
                 .then(json => resolved(responseToGameArray(json)))
+                .catch(error => rejected(error))
     })
 
 }
