@@ -36,14 +36,7 @@ async function getGamesInfo(gameids) {
 }
 
 function getGamesInfoPromise(gameids) {
-    return new Promise((resolved, rejected) => {
-        if (gameids.length == 0)
-            resolved([])
-        else
-            return fetch(getUrl(gameids))
+    return fetch(getUrl(gameids))
                 .then(response => response.json())
-                .then(json => resolved(responseToGameArray(json)))
-                .catch(error => rejected(error))
-    })
-
+                .then(json => responseToGameArray(json))
 }
