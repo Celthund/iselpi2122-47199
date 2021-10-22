@@ -36,6 +36,7 @@ async function getGamesInfo(gameids) {
 }
 
 function getGamesInfoPromise(gameids) {
+    if (gameids.length == 0) return new Promise((resolve) => resolve([]))
     return fetch(getUrl(gameids))
                 .then(response => response.json())
                 .then(json => responseToGameArray(json))
