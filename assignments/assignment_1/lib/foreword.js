@@ -45,7 +45,7 @@ async function gamesInfoFromIdsFileAsync(filename_origin, filename_destination) 
     try {
         const data = await fsPromises.readFile(filename_origin, {"encoding": "utf-8"})
         const gameids = data.split(/\r?\n/)
-        const games = fetchGameInfoAsync(gameids)
+        const games = await fetchGameInfoAsync(gameids)
         await fsPromises.writeFile(filename_destination, JSON.stringify(games))
         return true
     } catch {
