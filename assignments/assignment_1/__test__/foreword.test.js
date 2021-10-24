@@ -60,7 +60,7 @@ test('Using Promises to get game info with 0 ids', () => {
 })
 
 test('Testing responseToGameArray with empty object argument.', () => {
-  expect(responseToGameArray({})).toEqual([])
+  expect(responseToGameArray({})).toEqual({})
 })
 
 test('Testing responseToGameArray with object with empty games property.', () => {
