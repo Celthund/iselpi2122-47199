@@ -2,8 +2,8 @@ const fetch = require('node-fetch')
 const fsPromises = require('fs').promises
 
 module.exports = {
-    'getGamesInfo': fetchGameInfoAsync,
-    'getGamesInfoPromise': fetchGameInfoPromise,
+    'fetchGameInfoAsync': fetchGameInfoAsync,
+    'fetchGameInfoPromise': fetchGameInfoPromise,
     'Game': Game,
     'responseToGameArray': objectArrayToGameArray,
     'gamesInfoFromIdsFileAsync': gamesInfoFromIdsFileAsync,
@@ -17,14 +17,21 @@ function Game(id, name, url) {
 }
 
 function getUrl(gameids) {
-    const ids = gameids.reduce((prev, curr) => prev + "," + curr)
-    const url = "https://api.boardgameatlas.com/api/search?client_id=iLW2r2Ar8g&ids="
+    let ids = ""
+    if (typeof gameids == 'string')
+        ids = gameids
+    else
+        ids = gameids.reduce((prev, curr) => prev + "," + curr)
+    const url = "https://api.boardgameatlas.com/api/search?client_id=" + process.env.ATLAS_CLIENT_ID + "&ids="
     return url + ids
 }
 
 function objectArrayToGameArray(data) {
-    if (!data["games"]) return []
-    return data["games"].map((value) => new Game(value["id"], value["name"], value["url"]))
+    if (!data["games"]) return {}
+    const result = data["games"].map((value) => new Game(value["id"], value["name"], value["url"]))
+    if (result.length == 1)
+       return result[0]
+    return result 
 }
 
 async function fetchGameInfoAsync(gameids) {
@@ -34,18 +41,12 @@ async function fetchGameInfoAsync(gameids) {
     return objectArrayToGameArray(data)
 }
 
-function fetchGameInfoPromise(gameids) {
-    if (gameids.length == 0) return new Promise((resolve) => resolve([]))
-    return fetch(getUrl(gameids))
-        .then(response => response.json())
-        .then(json => objectArrayToGameArray(json))
-}
-
 async function gamesInfoFromIdsFileAsync(filename_origin, filename_destination) {
     try {
-        const data = await fsPromises.readFile(filename_origin, {"encoding": "utf-8"})
-        const gameids = data.split(/\r?\n/)
-        const games = await fetchGameInfoAsync(gameids)
+        const data = await fsPromises.readFile(filename_origin, { "encoding": "utf-8" })
+        const games = await Promise.all(
+            data.split(/\r?\n/).map(async ele => await fetchGameInfoAsync(ele)
+        ))
         await fsPromises.writeFile(filename_destination, JSON.stringify(games))
         return true
     } catch {
@@ -53,16 +54,20 @@ async function gamesInfoFromIdsFileAsync(filename_origin, filename_destination) 
     }
 }
 
+function fetchGameInfoPromise(gameids) {
+    if (gameids.length == 0) return new Promise((resolve) => resolve([]))
+    return fetch(getUrl(gameids))
+        .then(response => response.json())
+        .then(json => objectArrayToGameArray(json))
+}
+
 function gamesInfoFromIdsFilePromise(filename_origin, filename_destination) {
-    return fsPromises.readFile(filename_origin, {"encoding": "utf-8"}).then(
+    return fsPromises.readFile(filename_origin, { "encoding": "utf-8" }).then(
         (data) => {
-            const gameids = data.split(/\r?\n/)
-            return fetchGameInfoPromise(gameids)
+            return Promise.all(data.split(/\r?\n/).map(ele => fetchGameInfoPromise(ele)))
         })
         .then(
-            (games) => {
-                return fsPromises.writeFile(filename_destination, JSON.stringify(games))
-        })
-        .then(_ => true)
-        .catch(_ => false)
+            (games) => fsPromises.writeFile(filename_destination, JSON.stringify(games)))
+        .then(() => true)
+        .catch(() => false)
 }
